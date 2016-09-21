@@ -10,7 +10,7 @@ The paper (PDF) is generated from a LaTeX source file, a table, and a figure.
 
 Basically it works on a directed acyclic graph (DAG) model, sort of represented by this figure:
 
-![DAG](dependency-graph.svg)
+![DAG](https://rawgit.com/leeper/make-example/master/dependency-graph.svg)
 
 The R file `analysis.R` shows what is going on in `makefile` using possibly more familiar R syntax.
 
