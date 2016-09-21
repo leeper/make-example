@@ -1,4 +1,4 @@
-# R code
+# R code analogous to `makefile`
 
 ## Figure 1
 if (!file.exists("figure/figure1.pdf") || file.mtime("R/figure1.R") > file.mtime("figure/figure1.pdf")) {
