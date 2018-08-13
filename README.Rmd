@@ -1,0 +1,99 @@
+# Example of `make` for data analysis
+
+This repository shows how to use `make` for a data analysis project.
+
+The paper (PDF) is generated from a LaTeX source file, a table, and a figure.
+
+`make` uses a set of instructions in `makefile` to generate the table and figure using R code and a datafile, and then generate the PDF from the manuscript.
+
+`make` is clever because it deconstructs each part of the analysis so that only parts that have changed need to be rerun. If the data change, everything is rerun. If figure-generating code changes, only that code and the manuscript are rerun. If only the manuscript changes, only `pdflatex` is rerun. It's smart like that.
+
+Basically it works on a directed acyclic graph (DAG) model, sort of represented by this figure:
+
+```{r setup, include=FALSE}
+library("svglite")
+knitr::opts_chunk$set(
+  dev = "svglite",
+  fig.path="fig-",
+  fig.ext = "svg"
+)
+```
+
+```{r dag, echo = FALSE}
+requireNamespace("ggdag", quietly = TRUE)
+requireNamespace("dagitty", quietly = TRUE)
+
+parse_makefile <-
+function(
+  file = "makefile",
+  ...
+) {
+    con <- file(file, open = "rb")
+    on.exit(close(con))
+    m <- character()
+    # handle continuation characters
+    while (length(con)) {
+        this_line <- readLines(con, n = 1L)
+        if (!length(this_line)) {
+            break
+        }
+        m[length(m) + 1] <- this_line
+        while (grepl("\\\\$", m[length(m)]) && length(con)) {
+            m[length(m)] <- sub("\\\\$", " ", m[length(m)])
+            m[length(m)] <- paste0(m[length(m)], readLines(con, n = 1L))
+        }
+    }
+    return(m)
+}
+
+makefile_to_dag <-
+function(
+  lines = parse_makefile(),
+  exclude = NULL,
+  ...
+) {
+    rules <- lines[grepl("^[A-Za-z0-9./]+ ?[:]", lines)]
+    rules_list <- strsplit(rules, " ?: ?")
+    formulae <- lapply(rules_list, function(x) {
+        # cleanup target
+        target <- x[1L]
+        if (target %in% exclude) {
+            return(NULL)
+        }
+        target <- gsub("/", "_", target)
+        
+        # cleanup prereqs
+        prereqs <- strsplit(x[2L], "[ \t]+")[[1L]]
+        prereqs <- prereqs[!is.na(prereqs)]
+        prereqs <- gsub("/", "_", prereqs)
+        
+        # return
+        if (!length(prereqs)) {
+            return(NULL)
+        }
+        return(paste0(prereqs, " -> ", target, ";"))
+    })
+    paste0("dag{", paste0(unlist(formulae[lengths(formulae) > 0]), collapse = ""), "}")
+}
+
+plot_makefile_dag <-
+function(
+  file = "makefile",
+  exclude = NULL,
+  layout = "gem",
+  size = 4,
+  ...
+) {
+    mf <- makefile_to_dag(parse_makefile(file), exclude = exclude)
+    dag <- dagitty::dagitty(mf)
+    ggdag::ggdag_classic(dag, layout = layout, size = size, ...) + ggdag::theme_dag_blank()
+}
+
+plot_makefile_dag(exclude = "all")
+```
+
+(Note: directory `/` symbols are converted to `_` in the above.)
+
+The R file `analysis.R` shows what is going on in `makefile` using possibly more familiar R syntax.
+
+Zach Jones has [a good tutorial](http://zmjones.com/make/) about all of this.
