@@ -51,7 +51,7 @@ function(
   exclude = NULL,
   ...
 ) {
-    rules <- lines[grepl("^[A-Za-z0-9./]+ ?[:]", lines)]
+    rules <- lines[grepl("[ A-Za-z0-9./]+ ?[:] ?[ A-Za-z0-9./]+", lines)]
     rules_list <- strsplit(rules, " ?: ?")
     edges <- lapply(rules_list, function(x) {
         # cleanup target
@@ -59,38 +59,29 @@ function(
         if (target %in% exclude) {
             return(NULL)
         }
+        ## handle targets with multiple outputs
+        targets <- strsplit(target, " ")[[1L]]
         
         # cleanup prereqs
         prereqs <- strsplit(x[2L], "[ \t]+")[[1L]]
         prereqs <- prereqs[!is.na(prereqs)]
         
         # return
-        if (!length(prereqs)) {
+        if (!length(prereqs) || all(prereqs == "")) {
             return(NULL)
         }
-        unlist(lapply(prereqs, function(z) c(z, target)))
+        as.vector(t(as.matrix((expand.grid(prereqs, targets, stringsAsFactors = FALSE)))))
     })
     igraph::make_graph(unlist(edges))
 }
 
-plot_makefile_dag <-
-function(
-  file = "makefile",
-  exclude = NULL,
-  layout = "fr",
-  size = 4,
-  ...
-) {
-    net <- makefile_to_network(parse_makefile(file), exclude = exclude)
-    ggraph::ggraph(net, layout = layout) + 
-      ggraph::geom_edge_link(ggplot2::aes(start_cap = ggraph::label_rect(node1.name),
-                                          end_cap = ggraph::label_rect(node2.name)), 
-                              arrow = grid::arrow(length = grid::unit(2, 'mm'))) + 
-      ggraph::geom_node_text(ggplot2::aes(label = name), size = size) +
-      ggplot2::theme_void()
-}
-
-plot_makefile_dag(exclude = "all")
+net <- makefile_to_network(parse_makefile("makefile"), exclude = "all")
+ggraph::ggraph(net, layout = "kk") + 
+  ggraph::geom_edge_link(ggplot2::aes(start_cap = ggraph::label_rect(node1.name),
+                                      end_cap = ggraph::label_rect(node2.name)), 
+                         arrow = grid::arrow(length = grid::unit(2, 'mm'))) + 
+  ggraph::geom_node_text(ggplot2::aes(label = name), size = 2) +
+  ggplot2::theme_void()
 ```
 
 The R file `analysis.R` shows what is going on in `makefile` using possibly more familiar R syntax. The `README.Rmd` file contains the code to construct the above graph from an arbitrary makefile.
