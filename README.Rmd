@@ -20,6 +20,7 @@ knitr::opts_chunk$set(
 ```
 
 ```{r dag, echo = FALSE}
+requireNamespace("igraph", quietly = TRUE)
 requireNamespace("ggraph", quietly = TRUE)
 
 parse_makefile <-
