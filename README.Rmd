@@ -19,7 +19,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-```{r dag, echo = FALSE}
+```{r dag, echo = FALSE, fig.height=4, fig.width=6}
 requireNamespace("igraph", quietly = TRUE)
 requireNamespace("ggraph", quietly = TRUE)
 
@@ -81,7 +81,7 @@ ggraph::ggraph(net, layout = "kk") +
   ggraph::geom_edge_link(ggplot2::aes(start_cap = ggraph::label_rect(node1.name),
                                       end_cap = ggraph::label_rect(node2.name)), 
                          arrow = grid::arrow(length = grid::unit(2, 'mm'))) + 
-  ggraph::geom_node_text(ggplot2::aes(label = name), size = 2) +
+  ggraph::geom_node_text(ggplot2::aes(label = name), size = 4) +
   ggplot2::theme_void()
 ```
 
